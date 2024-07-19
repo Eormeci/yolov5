@@ -252,69 +252,71 @@ def run(
                 for c in det[:, 5].unique():
                     n = (det[:, 5] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
-
+                
                 # Calculate centers
                 centers_left = []
                 centers_right = []
                 midpoint = im0.shape[1] // 2  # Middle of the image width
-
+                
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     c = int(cls)  # integer class
                     label = names[c] if hide_conf else f"{names[c]}"
                     confidence = float(conf)
                     confidence_str = f"{confidence:.2f}"
-
+                
                     if save_csv:
                         write_to_csv(p.name, label, confidence_str)
-
+                
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         with open(f"{txt_path}.txt", "a") as f:
                             f.write(("%g " * len(line)).rstrip() % line + "\n")
-
-                    if save_img or save_crop or view_img:  # Add bbox to image               
+                
+                    if save_img or save_crop or view_img:
                         label = None 
-                        annotator.box_label(xyxy, label, color=colors(c, True))
+                        # Remove the bounding box drawing line
+                        # annotator.box_label(xyxy, label, color=colors(c, True))
+                
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / "crops" / names[c] / f"{p.stem}.jpg", BGR=True)
-
+                
                     # Calculate center of bounding box
                     center_x = int((xyxy[0] + xyxy[2]) / 2)
                     center_y = int((xyxy[1] + xyxy[3]) / 2)
-
+                
                     # Append centers to respective lists based on their x position
                     if center_x < midpoint:
                         centers_left.append((center_x, center_y))
                     else:
                         centers_right.append((center_x, center_y))
-
+                
                     # Draw X at center
                     size = 5  # size of the X
-                    color = (0, 0, 255)  # red color
+                    color = (0, 0, 0)  # black color
                     cv2.line(im0, (center_x - size, center_y - size), (center_x + size, center_y + size), color, 2)
                     cv2.line(im0, (center_x + size, center_y - size), (center_x - size, center_y + size), color, 2)
-
+                
                 # Draw vertical lines between centers on the left side
                 centers_left = sorted(centers_left, key=lambda x: x[1])  # Sort centers by y-coordinate
                 for i in range(len(centers_left) - 1):
-                    cv2.line(im0, centers_left[i], centers_left[i + 1], (0, 255, 255), 2)  # yellow color
-
+                    cv2.line(im0, centers_left[i], centers_left[i + 1], (0, 0, 0), 2)  # black color
+                
                 # Draw vertical lines between centers on the right side
                 centers_right = sorted(centers_right, key=lambda x: x[1])  # Sort centers by y-coordinate
                 for i in range(len(centers_right) - 1):
-                    cv2.line(im0, centers_right[i], centers_right[i + 1], (0, 255, 255), 2)  # yellow color
-
+                    cv2.line(im0, centers_right[i], centers_right[i + 1], (0, 0, 0), 2)  # black color
+                
                 # Find the highest box on the left side
                 highest_left = min(centers_left, key=lambda x: x[1]) if centers_left else None
-
+                
                 # Find the highest box on the right side
                 highest_right = min(centers_right, key=lambda x: x[1]) if centers_right else None
-
+                
                 # Connect the highest boxes horizontally
                 if highest_left and highest_right:
-                    cv2.line(im0, highest_left, highest_right, (0, 255, 255), 2)  # yellow color
+                    cv2.line(im0, highest_left, highest_right, (0, 0, 0), 2)  # black color
 
             
             ## ALT SINIR
